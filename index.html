@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UDF Dönüştürücü</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0c10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UDF Çevirici">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/281/281760.png">
+
+<style>
+  :root { --bg: #0a0c10; --surface: #12151c; --surface2: #1a1e28; --border: #252a36; --border-accent: #3d4560; --text: #e8eaf0; --text-dim: #8892a8; --accent: #4f8cff; --accent-glow: rgba(79,140,255,0.15); --accent2: #7c5cfc; --success: #34d399; --warning: #fbbf24; --danger: #f87171; --radius: 12px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9999; }
+  .app { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+  .header { text-align: center; margin-bottom: 48px; }
+  .logo-mark { display: inline-flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); background: var(--accent-glow); border: 1px solid rgba(79,140,255,0.2); padding: 6px 16px; border-radius: 100px; margin-bottom: 20px; }
+  .header h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, #e8eaf0 0%, #8892a8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+  .header p { color: var(--text-dim); font-size: 15px; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+  .drop-zone { position: relative; border: 2px dashed var(--border-accent); border-radius: var(--radius); padding: 56px 32px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--surface); margin-bottom: 24px; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: linear-gradient(180deg, var(--accent-glow) 0%, var(--surface) 100%); transform: translateY(-2px); }
+  .drop-icon { width: 56px; height: 56px; border-radius: 16px; background: var(--surface2); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .drop-icon svg { width: 24px; height: 24px; color: var(--accent); }
+  .drop-zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .drop-zone p { color: var(--text-dim); font-size: 13px; }
+  .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .format-badges { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+  .format-badge { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); }
+  .file-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .file-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .file-type-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; }
+  .file-type-icon.docx { background: rgba(79,140,255,0.12); color: var(--accent); border: 1px solid rgba(79,140,255,0.2); }
+  .file-type-icon.pdf { background: rgba(248,113,113,0.12); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-size { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .file-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; flex-shrink: 0; }
+  .file-status.ready { color: var(--text-dim); } .file-status.converting { color: var(--warning); } .file-status.done { color: var(--success); } .file-status.error { color: var(--danger); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .file-remove, .file-download { width: 28px; height: 28px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .file-remove { background: transparent; color: var(--text-dim); }
+  .file-download { background: rgba(52,211,153,0.12); color: var(--success); }
+  .convert-section { display: flex; gap: 12px; align-items: center; }
+  .btn-convert { flex: 1; padding: 16px 24px; border: none; border-radius: var(--radius); background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-clear { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-dim); font-size: 14px; cursor: pointer; }
+  .info-section { margin-top: 48px; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .info-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .info-section p { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  .info-card { padding: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; }
+  .info-card h5 { font-size: 12px; color: var(--accent); margin-bottom: 6px; }
+  .progress-wrap { margin-top: 16px; display: none; } .progress-wrap.active { display: block; }
+  .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; }
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.4s; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
+  .toast.error { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }
+  @media (max-width: 600px) { .app { padding: 24px 16px 60px; } .info-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="logo-mark">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      UDF DÖNÜŞTÜRÜCÜ
+    </div>
+    <h1>Word & PDF → UDF</h1>
+    <p>Belgelerinizi UYAP Doküman Formatına dönüştürün. İşlemler telefonunuzda yapılır, internete yüklenmez.</p>
+  </div>
+
+  <div class="drop-zone" id="dropZone">
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <h3>Dosyalarınızı seçin</h3>
+    <div class="format-badges"><span class="format-badge">.DOCX</span><span class="format-badge">.PDF</span></div>
+    <input type="file" id="fileInput" multiple accept=".docx,.pdf" />
+  </div>
+
+  <div class="file-list" id="fileList"></div>
+  <div class="progress-wrap" id="progressWrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><div class="progress-text" id="progressText" style="margin-top:8px; font-size:12px; color:#8892a8; text-align:center;"></div></div>
+
+  <div class="convert-section" id="convertSection" style="display:none;">
+    <button class="btn-convert" id="btnConvert" onclick="convertAll()">⚡ Dönüştür</button>
+    <button class="btn-clear" onclick="clearAll()">Temizle</button>
+  </div>
+
+  <div class="info-section">
+    <h4>UDF Formatı Hakkında</h4>
+    <div class="info-grid">
+      <div class="info-card"><h5>GÜVENLİK</h5><p>Dosyalar cihazınızda işlenir, sunucuya gitmez.</p></div>
+      <div class="info-card"><h5>UYUMLULUK</h5><p>Oluşturulan dosyalar UYAP Editör ile açılabilir.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// PWA Service Worker Kurulumu
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW Hatası:', err));
+  });
+}
+
+// Uygulama Kodları
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const files = []; const results = {};
+const fileInput = document.getElementById('fileInput');
+
+fileInput.addEventListener('change', ev => {
+  if (ev.target.files) addFiles(ev.target.files);
+  ev.target.value = '';
+});
+
+function addFiles(fileList) {
+  for (const f of fileList) {
+    const ext = f.name.split('.').pop().toLowerCase();
+    if (ext !== 'docx' && ext !== 'pdf') { showToast('Sadece .docx ve .pdf desteklenir', 'error'); continue; }
+    if (files.some(x => x.name === f.name && x.size === f.size)) continue;
+    files.push(f);
+  }
+  renderList();
+}
+
+function removeFile(idx) {
+  const f = files[idx]; if (f) delete results[f.name];
+  files.splice(idx, 1); renderList();
+}
+
+function clearAll() { files.length = 0; Object.keys(results).forEach(k => delete results[k]); renderList(); }
+function formatSize(bytes) { return bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB'; }
+
+function renderList() {
+  const list = document.getElementById('fileList'); const section = document.getElementById('convertSection');
+  if (files.length === 0) { list.innerHTML = ''; section.style.display = 'none'; return; }
+  section.style.display = 'flex';
+  list.innerHTML = files.map((f, i) => {
+    const ext = f.name.split('.').pop().toLowerCase(); const r = results[f.name];
+    let status = '<div class="file-status ready">Hazır</div>';
+    let action = `<button class="file-remove" onclick="removeFile(${i})">Sil</button>`;
+    if (r === 'converting') status = '<div class="file-status converting">İşleniyor...</div>';
+    else if (r === 'error') status = '<div class="file-status error">Hata</div>';
+    else if (r && r.url) { status = '<div class="file-status done">Tamamlandı</div>'; action = `<button class="file-download" onclick="downloadFile('${f.name}')">İndir</button>`; }
+    return `<div class="file-item"><div class="file-type-icon ${ext}">${ext.toUpperCase()}</div><div class="file-info"><div class="file-name">${f.name}</div><div class="file-size">${formatSize(f.size)}</div></div>${status}${action}</div>`;
+  }).join('');
+}
+
+function escapeXml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
+
+function buildUdfXml(paragraphs) {
+  let fullText = ''; const elementsList = [];
+  for (const para of paragraphs) {
+    const startOffset = fullText.length; const paraText = para.text || ''; fullText += paraText;
+    const length = paraText.length; const contentAttrs = [`startOffset="${startOffset}"`, `length="${length}"`];
+    if (para.bold) contentAttrs.push('bold="true"'); if (para.italic) contentAttrs.push('italic="true"');
+    if (para.fontSize) contentAttrs.push(`fontSize="${para.fontSize}"`);
+    elementsList.push(`<paragraph><content ${contentAttrs.join(' ')}/></paragraph>`);
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?><document><content>${escapeXml(fullText)}</content><properties><pageFormat mediaSizeName="1" leftMargin="70.8" rightMargin="70.8" topMargin="70.8" bottomMargin="70.8" paperOrientation="1"/></properties><elements resolver="hvl-default">${elementsList.join('\n')}</elements></document>`;
+}
+
+async function createUdfFromXml(xmlContent) {
+  const zip = new JSZip(); zip.file('content.xml', xmlContent);
+  return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+}
+
+async function processDocx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.convertToHtml({ arrayBuffer });
+  const doc = new DOMParser().parseFromString('<div>' + result.value + '</div>', 'text/html');
+  const paragraphs = [];
+  for (const el of doc.body.firstChild.children) {
+    let text = el.textContent || ''; if (!text && el.tagName.toLowerCase() !== 'br') text = '\n';
+    paragraphs.push({ text: text + '\n', bold: el.innerHTML.includes('<b>') || el.innerHTML.includes('<strong>'), italic: el.innerHTML.includes('<i>') || el.innerHTML.includes('<em>'), fontSize: '12' });
+  }
+  return paragraphs.length ? paragraphs : [{text: '\n', fontSize: '12'}];
+}
+
+async function processPdf(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const paragraphs = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i); const textContent = await page.getTextContent();
+    let lastY = null; let currentLine = '';
+    for (const item of textContent.items) {
+      const y = item.transform[5];
+      if (lastY !== null && Math.abs(y - lastY) > 5) { if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n', fontSize: '12' }); currentLine = ''; }
+      currentLine += item.str; lastY = y;
+    }
+    if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n', fontSize: '12' });
+  }
+  return paragraphs;
+}
+
+async function convertAll() {
+  const btn = document.getElementById('btnConvert'); btn.disabled = true; btn.textContent = 'Dönüştürülüyor...';
+  document.getElementById('progressWrap').classList.add('active');
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i]; if (results[f.name] && results[f.name].url) continue;
+    results[f.name] = 'converting'; renderList();
+    try {
+      const ext = f.name.split('.').pop().toLowerCase();
+      const paragraphs = ext === 'docx' ? await processDocx(f) : await processPdf(f);
+      const xml = buildUdfXml(paragraphs);
+      const blob = await createUdfFromXml(xml);
+      results[f.name] = { url: URL.createObjectURL(blob), name: f.name.replace(/\.(docx|pdf)$/i, '.udf') };
+    } catch (err) { results[f.name] = 'error'; showToast('Hata oluştu', 'error'); }
+    renderList();
+  }
+  btn.disabled = false; btn.textContent = '⚡ Dönüştür'; document.getElementById('progressWrap').classList.remove('active');
+}
+
+function downloadFile(name) {
+  const r = results[name]; if (!r || !r.url) return;
+  const a = document.createElement('a'); a.href = r.url; a.download = r.name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function showToast(message, type) {
+  const toast = document.getElementById('toast'); toast.textContent = message; toast.className = 'toast ' + type;
+  setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => toast.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
