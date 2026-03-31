@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-<link rel="manifest" href="manifest.json?v=6">
+<link rel="manifest" href="manifest.json?v=7">
 <meta name="theme-color" content="#0a0c10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -23,13 +23,13 @@
   body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9999; }
   .app { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
   .header { text-align: center; margin-bottom: 48px; }
-  .logo-mark { display: inline-flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); background: var(--accent-glow); border: 1px solid rgba(79,140,255,0.2); padding: 6px 16px; border-radius: 100px; margin-bottom: 20px; }
+  .logo-mark { display: inline-flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 6px 16px; border-radius: 100px; margin-bottom: 20px; }
   .header h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, #e8eaf0 0%, #8892a8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
   .header p { color: var(--text-dim); font-size: 15px; max-width: 480px; margin: 0 auto; line-height: 1.6; }
   .drop-zone { position: relative; border: 2px dashed var(--border-accent); border-radius: var(--radius); padding: 56px 32px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--surface); margin-bottom: 24px; }
-  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: linear-gradient(180deg, var(--accent-glow) 0%, var(--surface) 100%); transform: translateY(-2px); }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: #10b981; background: linear-gradient(180deg, rgba(16,185,129,0.05) 0%, var(--surface) 100%); transform: translateY(-2px); }
   .drop-icon { width: 56px; height: 56px; border-radius: 16px; background: var(--surface2); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-  .drop-icon svg { width: 24px; height: 24px; color: var(--accent); }
+  .drop-icon svg { width: 24px; height: 24px; color: #10b981; }
   .drop-zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
   .drop-zone p { color: var(--text-dim); font-size: 13px; }
   .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -50,11 +50,11 @@
   .file-remove { background: transparent; color: var(--text-dim); }
   .file-download { background: rgba(52,211,153,0.12); color: var(--success); }
   .convert-section { display: flex; gap: 12px; align-items: center; }
-  .btn-convert { flex: 1; padding: 16px 24px; border: none; border-radius: var(--radius); background: linear-gradient(135deg, var(--danger) 0%, #b91c1c 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-convert { flex: 1; padding: 16px 24px; border: none; border-radius: var(--radius); background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
   .btn-clear { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-dim); font-size: 14px; cursor: pointer; }
   .progress-wrap { margin-top: 16px; display: none; } .progress-wrap.active { display: block; }
   .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--danger), #b91c1c); width: 0%; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #10b981, #059669); width: 0%; }
   .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.4s; }
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.success { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
@@ -65,9 +65,9 @@
 
 <div class="app">
   <div class="header">
-    <div class="logo-mark" style="color:var(--danger); border-color:var(--danger); background:rgba(248,113,113,0.1);">UDF DÖNÜŞTÜRÜCÜ (v6)</div>
-    <h1>Nükleer Çözüm</h1>
-    <p>UYAP'ın çökmemsi için formatlama kaldırıldı, %100 saf metin (Düz Yazı) kipi aktif.</p>
+    <div class="logo-mark">UDF DÖNÜŞTÜRÜCÜ (v7)</div>
+    <h1>Mutlak Uyum Sürümü</h1>
+    <p>Sıkıştırmasız ZIP Modu ve Java Offset Düzeltici Aktif.</p>
   </div>
   <div class="drop-zone" id="dropZone">
     <div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
@@ -125,18 +125,36 @@ function renderList() {
   }).join('');
 }
 
-// UYAP V6 (SAF METİN - NÜKLEER ÇÖZÜM)
+// UYAP V7 (MUTLAK UYUM - SIKIŞTIRMASIZ DÜZ METİN)
 function buildUdfXml(text) {
-  // UYAP'ı çökerten tüm görünmez karakterleri, carriage return'leri ve XML hatalarını vahşice temizle
   let cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  cleanText = cleanText.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u200B-\u200D\uFEFF]/g, '');
-  cleanText = cleanText.replace(/]]>/g, ']] >');
+  cleanText = cleanText.replace(/\t/g, '    '); // Tab boşluklarını normal 4 boşluğa çevir (UYAP çökmesini önler)
+  cleanText = cleanText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u200B-\u200D\uFEFF]/g, ''); // Tüm görünmez kırıcılara imha
+  cleanText = cleanText.replace(/\]\]>/g, ']] >');
   
-  // UYAP sonun enter ile bitmesini sever
   if (!cleanText.endsWith('\n')) cleanText += '\n';
 
-  // JS length UTF-16 sayar, UYAP Java da UTF-16 sayar. Bu sayede ofset hatası İMKANSIZDIR.
-  let totalLength = cleanText.length;
+  let elementsList = [];
+  let currentOffset = 0;
+  let lines = cleanText.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    if (i === lines.length - 1 && lines[i] === '') continue; // Fazlalık satırı atla
+
+    let lineContent = lines[i] + '\n';
+    let length = lineContent.length;
+
+    let contentTag = `<content startOffset="${currentOffset}" length="${length}" family="Times New Roman" size="12" bold="false" italic="false" underline="false" color="-16777216"/>`;
+    let paraTag = `<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">\n${contentTag}\n</paragraph>`;
+
+    elementsList.push(paraTag);
+    currentOffset += length;
+  }
+
+  if (elementsList.length === 0) {
+    cleanText = '\n';
+    elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">\n<content startOffset="0" length="1" family="Times New Roman" size="12" bold="false" italic="false" underline="false" color="-16777216"/>\n</paragraph>`);
+  }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <document>
@@ -148,9 +166,7 @@ function buildUdfXml(text) {
 <style name="Varsay&#305;lan" family="hvl-default" size="12" bold="false" italic="false"/>
 </styles>
 <elements resolver="hvl-default">
-<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">
-<content startOffset="0" length="${totalLength}" family="Times New Roman" size="12" bold="false" italic="false" underline="false" color="-16777216"/>
-</paragraph>
+${elementsList.join('\n')}
 </elements>
 </document>`;
 }
@@ -158,13 +174,13 @@ function buildUdfXml(text) {
 async function createUdfFromXml(xmlContent) {
   const zip = new JSZip(); 
   zip.file('content.xml', xmlContent);
-  return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  // ÇOK ÖNEMLİ DEĞİŞİKLİK: Sıkıştırmayı tamamen kaldırdık (STORE). Eski Java programları bu olmadan XML'i okuyamaz.
+  return await zip.generateAsync({ type: 'blob', compression: 'STORE' });
 }
 
 async function processDocx(file) {
   const arrayBuffer = await file.arrayBuffer();
-  // V6 DEĞİŞİKLİĞİ: Stilleri okumaya çalışarak UYAP'ı hataya düşüren HTML döngüsünü çöpe attık. 
-  // Mammoth kütüphanesinin "Sadece Saf Metni Al" özelliğini kullanıyoruz.
+  // Sadece saf yazıyı alıyoruz, tablolar vs. her şey dümdüz yazıya dönüyor.
   const result = await mammoth.extractRawText({ arrayBuffer });
   return result.value || '\n';
 }
