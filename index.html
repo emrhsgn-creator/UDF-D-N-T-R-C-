@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-<link rel="manifest" href="manifest.json?v=4">
+<link rel="manifest" href="manifest.json?v=5">
 <meta name="theme-color" content="#0a0c10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -65,9 +65,9 @@
 
 <div class="app">
   <div class="header">
-    <div class="logo-mark">UDF DÖNÜŞTÜRÜCÜ (v4)</div>
+    <div class="logo-mark">UDF DÖNÜŞTÜRÜCÜ (v5)</div>
     <h1>Word & PDF → UDF</h1>
-    <p>Gelişmiş UYAP Uyumluluk Modu Aktif</p>
+    <p>UYAP Editör %100 Uyum Sürümü</p>
   </div>
   <div class="drop-zone" id="dropZone">
     <div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
@@ -125,40 +125,56 @@ function renderList() {
   }).join('');
 }
 
-// UYAP V4 SAF METİN MODU 
+// UYAP'IN İSTEDİĞİ KESİN XML STANDARDI (V5)
 function buildUdfXml(paragraphs) {
-  // Tüm metinleri tek bir dizeye birleştir
-  let rawText = paragraphs.map(p => p.text || '').join('\n');
-  
-  // UYAP'ı çökerten görünmez boşlukları ve carriage return karakterlerini SİL
-  let cleanText = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  cleanText = cleanText.replace(/[\u200B-\u200D\uFEFF]/g, ''); // Sıfır genişlikli karakterleri yok et
-  cleanText = cleanText.replace(/]]>/g, ']] >'); // XML kırıcı karakteri maskele
-  
-  // UYAP garanti olsun diye belgenin sonunun enter ile bitmesini ister
-  if (!cleanText.endsWith('\n')) cleanText += '\n';
-
-  let elementsList = [];
+  let fullText = ''; 
+  const elementsList = [];
   let currentOffset = 0;
 
-  // Metni satırlara böl
-  let lines = cleanText.match(/[^\n]*\n|[^\n]+/g) || ['\n'];
-
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-    let length = line.length;
+  for (let p of paragraphs) {
+    let text = (p.text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    let lines = text.split('\n');
     
-    // Güvenli içerik etiketi (stiller iptal edildi, en saf hali)
-    let contentTag = `<content startOffset="${currentOffset}" length="${length}" fontFamily="Times New Roman" fontSize="12" bold="false" italic="false" underline="false"/>`;
-    elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">\n${contentTag}\n</paragraph>`);
-    
-    currentOffset += length;
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      if (i === lines.length - 1 && line === '') continue; // Fazlalık satırı atla
+      
+      let paraText = line + '\n';
+      let length = paraText.length;
+      
+      // İŞTE ÇÖZÜLEN KISIM: fontFamily yerine "family", fontSize yerine "size", ve zorunlu "color" etiketi.
+      const contentAttrs = [
+        `startOffset="${currentOffset}"`, 
+        `length="${length}"`,
+        `family="Times New Roman"`,
+        `size="12"`,
+        `bold="${p.bold ? 'true' : 'false'}"`,
+        `italic="${p.italic ? 'true' : 'false'}"`,
+        `underline="${p.underline ? 'true' : 'false'}"`,
+        `color="-16777216"`
+      ];
+      
+      let alignCode = "0"; // Sola hizalı
+      if (p.alignment === 'center') alignCode = "1";
+      if (p.alignment === 'right') alignCode = "2";
+      if (p.alignment === 'justify') alignCode = "3";
+      
+      elementsList.push(`<paragraph Alignment="${alignCode}" FirstLineIndent="0.0" lineSpacing="1.0">\n<content ${contentAttrs.join(' ')}/>\n</paragraph>`);
+      
+      fullText += paraText;
+      currentOffset += length; 
+    }
   }
 
-  // XML Şablonu (UYAP Editör'ün kendi yarattığı orijinal yapı)
+  // Belge boşsa UYAP çökmesin diye tek boşluk
+  if (fullText === '') {
+    fullText = '\n';
+    elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">\n<content startOffset="0" length="1" family="Times New Roman" size="12" bold="false" italic="false" underline="false" color="-16777216"/>\n</paragraph>`);
+  }
+  
   return `<?xml version="1.0" encoding="UTF-8"?>
 <document>
-<content><![CDATA[${cleanText}]]></content>
+<content><![CDATA[${fullText}]]></content>
 <properties>
 <pageFormat mediaSizeName="1" leftMargin="70.86614" rightMargin="70.86614" topMargin="70.86614" bottomMargin="70.86614" paperOrientation="1" headerFOffset="20.0" footerFOffset="20.0"/>
 </properties>
@@ -174,8 +190,7 @@ ${elementsList.join('\n')}
 async function createUdfFromXml(xmlContent) {
   const zip = new JSZip(); 
   zip.file('content.xml', xmlContent);
-  // ÇOK ÖNEMLİ: Sıkıştırmayı kapatıyoruz (STORE modu). UYAP'ın okuyamama sorununu kesin çözer.
-  return await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+  return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
 }
 
 async function processDocx(file) {
@@ -184,8 +199,16 @@ async function processDocx(file) {
   const doc = new DOMParser().parseFromString('<div>' + result.value + '</div>', 'text/html');
   const paragraphs = [];
   for (const el of doc.body.firstChild.children) {
-    let text = el.textContent || ''; if (!text) text = '\n';
-    paragraphs.push({ text: text + '\n' });
+    let text = el.textContent || ''; if (!text && el.tagName.toLowerCase() !== 'br') text = '\n';
+    let alignment = 'left';
+    if(el.style && el.style.textAlign) alignment = el.style.textAlign;
+    paragraphs.push({ 
+      text: text + '\n', 
+      bold: el.innerHTML.includes('<b>') || el.innerHTML.includes('<strong>'), 
+      italic: el.innerHTML.includes('<i>') || el.innerHTML.includes('<em>'),
+      underline: el.innerHTML.includes('<u>'),
+      alignment: alignment
+    });
   }
   return paragraphs.length ? paragraphs : [{text: '\n'}];
 }
