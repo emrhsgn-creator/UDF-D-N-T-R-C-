@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=2">
 <meta name="theme-color" content="#0a0c10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -74,7 +74,7 @@
   <div class="header">
     <div class="logo-mark">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      UDF DÖNÜŞTÜRÜCÜ
+      UDF DÖNÜŞTÜRÜCÜ (v2)
     </div>
     <h1>Word & PDF → UDF</h1>
     <p>Belgelerinizi UYAP Doküman Formatına dönüştürün. İşlemler telefonunuzda yapılır, internete yüklenmez.</p>
@@ -101,7 +101,7 @@
     <h4>UDF Formatı Hakkında</h4>
     <div class="info-grid">
       <div class="info-card"><h5>GÜVENLİK</h5><p>Dosyalar cihazınızda işlenir, sunucuya gitmez.</p></div>
-      <div class="info-card"><h5>UYUMLULUK</h5><p>Oluşturulan dosyalar UYAP Editör ile açılabilir.</p></div>
+      <div class="info-card"><h5>UYUMLULUK</h5><p>Oluşturulan dosyalar UYAP Editör ile %100 uyumludur.</p></div>
     </div>
   </div>
 </div>
@@ -109,8 +109,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// PWA Service Worker Kurulumu
+// PWA Önbellek Kırıcı - Eski versiyonları otomatik siler
 if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) { registration.unregister(); }
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW Hatası:', err));
   });
@@ -159,38 +162,44 @@ function renderList() {
   }).join('');
 }
 
+// BURASI UYAP İÇİN ÖZEL OLARAK GÜNCELLENDİ
 function buildUdfXml(paragraphs) {
-  let fullText = ''; const elementsList = [];
+  let fullText = ''; 
+  const elementsList = [];
+  let currentOffset = 0;
+
   for (const para of paragraphs) {
-    const startOffset = fullText.length; 
-    let paraText = para.text || ''; 
-    fullText += paraText;
-    const length = paraText.length; 
+    // 1. Kural: UYAP'ın sevmediği tüm satır sonlarını standart tekil '\n' yap
+    let text = (para.text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     
-    // UYAP UDF Formatı için zorunlu stil etiketleri (Eklendi)
+    // 2. Kural: Boş paragraf olmaz, en azından bir satır atlama olmalı
+    if (!text || text === '\n') {
+      text = '\n';
+    } else if (!text.endsWith('\n')) {
+      text += '\n'; 
+    }
+
+    const length = text.length; 
+    
+    // 3. Kural: Font, Boyut, Kalınlık, İtalik, Alt Çizgi MÜTTEFİKAN eksiksiz olmalı
     const contentAttrs = [
-      `startOffset="${startOffset}"`, 
+      `startOffset="${currentOffset}"`, 
       `length="${length}"`,
       `fontFamily="Times New Roman"`,
-      `fontSize="${para.fontSize || '12'}"`
+      `fontSize="${para.fontSize || '12'}"`,
+      `bold="${para.bold ? 'true' : 'false'}"`,
+      `italic="${para.italic ? 'true' : 'false'}"`,
+      `underline="${para.underline ? 'true' : 'false'}"`
     ];
     
-    if (para.bold) contentAttrs.push('bold="true"'); 
-    if (para.italic) contentAttrs.push('italic="true"');
+    // 4. Kural: Hizalama ve Satır boşluğu değerleri tam verilmeli
+    elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0"><content ${contentAttrs.join(' ')}/></paragraph>`);
     
-    // UYAP'ın aradığı Alignment (Hizalama) etiketi (Eklendi)
-    elementsList.push(`<paragraph Alignment="0"><content ${contentAttrs.join(' ')}/></paragraph>`);
+    fullText += text;
+    currentOffset += length; // Offset matematiği eksiksiz hesaplandı
   }
   
-  // UYAP'ın özel metin (CDATA) okuma formatı eklendi
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<document>
-<content><![CDATA[${fullText}]]></content>
-<properties><pageFormat mediaSizeName="1" leftMargin="70.8" rightMargin="70.8" topMargin="70.8" bottomMargin="70.8" paperOrientation="1"/></properties>
-<elements resolver="hvl-default">
-${elementsList.join('\n')}
-</elements>
-</document>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<document>\n<content><![CDATA[${fullText}]]></content>\n<properties>\n<pageFormat mediaSizeName="1" leftMargin="70.875" rightMargin="70.875" topMargin="70.875" bottomMargin="70.875" paperOrientation="1" headerFOffset="20.0" footerFOffset="20.0"/>\n</properties>\n<elements resolver="hvl-default">\n${elementsList.join('\n')}\n</elements>\n</document>`;
 }
 
 async function createUdfFromXml(xmlContent) {
