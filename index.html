@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-<link rel="manifest" href="manifest.json?v=5">
+<link rel="manifest" href="manifest.json?v=6">
 <meta name="theme-color" content="#0a0c10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -50,11 +50,11 @@
   .file-remove { background: transparent; color: var(--text-dim); }
   .file-download { background: rgba(52,211,153,0.12); color: var(--success); }
   .convert-section { display: flex; gap: 12px; align-items: center; }
-  .btn-convert { flex: 1; padding: 16px 24px; border: none; border-radius: var(--radius); background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-convert { flex: 1; padding: 16px 24px; border: none; border-radius: var(--radius); background: linear-gradient(135deg, var(--danger) 0%, #b91c1c 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
   .btn-clear { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-dim); font-size: 14px; cursor: pointer; }
   .progress-wrap { margin-top: 16px; display: none; } .progress-wrap.active { display: block; }
   .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--danger), #b91c1c); width: 0%; }
   .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.4s; }
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.success { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
@@ -65,9 +65,9 @@
 
 <div class="app">
   <div class="header">
-    <div class="logo-mark">UDF DÖNÜŞTÜRÜCÜ (v5)</div>
-    <h1>Word & PDF → UDF</h1>
-    <p>UYAP Editör %100 Uyum Sürümü</p>
+    <div class="logo-mark" style="color:var(--danger); border-color:var(--danger); background:rgba(248,113,113,0.1);">UDF DÖNÜŞTÜRÜCÜ (v6)</div>
+    <h1>Nükleer Çözüm</h1>
+    <p>UYAP'ın çökmemsi için formatlama kaldırıldı, %100 saf metin (Düz Yazı) kipi aktif.</p>
   </div>
   <div class="drop-zone" id="dropZone">
     <div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
@@ -125,56 +125,22 @@ function renderList() {
   }).join('');
 }
 
-// UYAP'IN İSTEDİĞİ KESİN XML STANDARDI (V5)
-function buildUdfXml(paragraphs) {
-  let fullText = ''; 
-  const elementsList = [];
-  let currentOffset = 0;
-
-  for (let p of paragraphs) {
-    let text = (p.text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    let lines = text.split('\n');
-    
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      if (i === lines.length - 1 && line === '') continue; // Fazlalık satırı atla
-      
-      let paraText = line + '\n';
-      let length = paraText.length;
-      
-      // İŞTE ÇÖZÜLEN KISIM: fontFamily yerine "family", fontSize yerine "size", ve zorunlu "color" etiketi.
-      const contentAttrs = [
-        `startOffset="${currentOffset}"`, 
-        `length="${length}"`,
-        `family="Times New Roman"`,
-        `size="12"`,
-        `bold="${p.bold ? 'true' : 'false'}"`,
-        `italic="${p.italic ? 'true' : 'false'}"`,
-        `underline="${p.underline ? 'true' : 'false'}"`,
-        `color="-16777216"`
-      ];
-      
-      let alignCode = "0"; // Sola hizalı
-      if (p.alignment === 'center') alignCode = "1";
-      if (p.alignment === 'right') alignCode = "2";
-      if (p.alignment === 'justify') alignCode = "3";
-      
-      elementsList.push(`<paragraph Alignment="${alignCode}" FirstLineIndent="0.0" lineSpacing="1.0">\n<content ${contentAttrs.join(' ')}/>\n</paragraph>`);
-      
-      fullText += paraText;
-      currentOffset += length; 
-    }
-  }
-
-  // Belge boşsa UYAP çökmesin diye tek boşluk
-  if (fullText === '') {
-    fullText = '\n';
-    elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">\n<content startOffset="0" length="1" family="Times New Roman" size="12" bold="false" italic="false" underline="false" color="-16777216"/>\n</paragraph>`);
-  }
+// UYAP V6 (SAF METİN - NÜKLEER ÇÖZÜM)
+function buildUdfXml(text) {
+  // UYAP'ı çökerten tüm görünmez karakterleri, carriage return'leri ve XML hatalarını vahşice temizle
+  let cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  cleanText = cleanText.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u200B-\u200D\uFEFF]/g, '');
+  cleanText = cleanText.replace(/]]>/g, ']] >');
   
+  // UYAP sonun enter ile bitmesini sever
+  if (!cleanText.endsWith('\n')) cleanText += '\n';
+
+  // JS length UTF-16 sayar, UYAP Java da UTF-16 sayar. Bu sayede ofset hatası İMKANSIZDIR.
+  let totalLength = cleanText.length;
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <document>
-<content><![CDATA[${fullText}]]></content>
+<content><![CDATA[${cleanText}]]></content>
 <properties>
 <pageFormat mediaSizeName="1" leftMargin="70.86614" rightMargin="70.86614" topMargin="70.86614" bottomMargin="70.86614" paperOrientation="1" headerFOffset="20.0" footerFOffset="20.0"/>
 </properties>
@@ -182,7 +148,9 @@ function buildUdfXml(paragraphs) {
 <style name="Varsay&#305;lan" family="hvl-default" size="12" bold="false" italic="false"/>
 </styles>
 <elements resolver="hvl-default">
-${elementsList.join('\n')}
+<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">
+<content startOffset="0" length="${totalLength}" family="Times New Roman" size="12" bold="false" italic="false" underline="false" color="-16777216"/>
+</paragraph>
 </elements>
 </document>`;
 }
@@ -195,39 +163,27 @@ async function createUdfFromXml(xmlContent) {
 
 async function processDocx(file) {
   const arrayBuffer = await file.arrayBuffer();
-  const result = await mammoth.convertToHtml({ arrayBuffer });
-  const doc = new DOMParser().parseFromString('<div>' + result.value + '</div>', 'text/html');
-  const paragraphs = [];
-  for (const el of doc.body.firstChild.children) {
-    let text = el.textContent || ''; if (!text && el.tagName.toLowerCase() !== 'br') text = '\n';
-    let alignment = 'left';
-    if(el.style && el.style.textAlign) alignment = el.style.textAlign;
-    paragraphs.push({ 
-      text: text + '\n', 
-      bold: el.innerHTML.includes('<b>') || el.innerHTML.includes('<strong>'), 
-      italic: el.innerHTML.includes('<i>') || el.innerHTML.includes('<em>'),
-      underline: el.innerHTML.includes('<u>'),
-      alignment: alignment
-    });
-  }
-  return paragraphs.length ? paragraphs : [{text: '\n'}];
+  // V6 DEĞİŞİKLİĞİ: Stilleri okumaya çalışarak UYAP'ı hataya düşüren HTML döngüsünü çöpe attık. 
+  // Mammoth kütüphanesinin "Sadece Saf Metni Al" özelliğini kullanıyoruz.
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value || '\n';
 }
 
 async function processPdf(file) {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const paragraphs = [];
+  let fullText = '';
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i); const textContent = await page.getTextContent();
     let lastY = null; let currentLine = '';
     for (const item of textContent.items) {
       const y = item.transform[5];
-      if (lastY !== null && Math.abs(y - lastY) > 5) { if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n' }); currentLine = ''; }
+      if (lastY !== null && Math.abs(y - lastY) > 5) { fullText += currentLine.trim() + '\n'; currentLine = ''; }
       currentLine += item.str; lastY = y;
     }
-    if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n' });
+    fullText += currentLine.trim() + '\n';
   }
-  return paragraphs;
+  return fullText;
 }
 
 async function convertAll() {
@@ -238,8 +194,8 @@ async function convertAll() {
     results[f.name] = 'converting'; renderList();
     try {
       const ext = f.name.split('.').pop().toLowerCase();
-      const paragraphs = ext === 'docx' ? await processDocx(f) : await processPdf(f);
-      const xml = buildUdfXml(paragraphs);
+      const rawText = ext === 'docx' ? await processDocx(f) : await processPdf(f);
+      const xml = buildUdfXml(rawText);
       const blob = await createUdfFromXml(xml);
       results[f.name] = { url: URL.createObjectURL(blob), name: f.name.replace(/\.(docx|pdf)$/i, '.udf') };
     } catch (err) { results[f.name] = 'error'; showToast('Hata oluştu', 'error'); }
