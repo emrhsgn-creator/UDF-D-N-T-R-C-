@@ -159,18 +159,38 @@ function renderList() {
   }).join('');
 }
 
-function escapeXml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
-
 function buildUdfXml(paragraphs) {
   let fullText = ''; const elementsList = [];
   for (const para of paragraphs) {
-    const startOffset = fullText.length; const paraText = para.text || ''; fullText += paraText;
-    const length = paraText.length; const contentAttrs = [`startOffset="${startOffset}"`, `length="${length}"`];
-    if (para.bold) contentAttrs.push('bold="true"'); if (para.italic) contentAttrs.push('italic="true"');
-    if (para.fontSize) contentAttrs.push(`fontSize="${para.fontSize}"`);
-    elementsList.push(`<paragraph><content ${contentAttrs.join(' ')}/></paragraph>`);
+    const startOffset = fullText.length; 
+    let paraText = para.text || ''; 
+    fullText += paraText;
+    const length = paraText.length; 
+    
+    // UYAP UDF Formatı için zorunlu stil etiketleri (Eklendi)
+    const contentAttrs = [
+      `startOffset="${startOffset}"`, 
+      `length="${length}"`,
+      `fontFamily="Times New Roman"`,
+      `fontSize="${para.fontSize || '12'}"`
+    ];
+    
+    if (para.bold) contentAttrs.push('bold="true"'); 
+    if (para.italic) contentAttrs.push('italic="true"');
+    
+    // UYAP'ın aradığı Alignment (Hizalama) etiketi (Eklendi)
+    elementsList.push(`<paragraph Alignment="0"><content ${contentAttrs.join(' ')}/></paragraph>`);
   }
-  return `<?xml version="1.0" encoding="UTF-8"?><document><content>${escapeXml(fullText)}</content><properties><pageFormat mediaSizeName="1" leftMargin="70.8" rightMargin="70.8" topMargin="70.8" bottomMargin="70.8" paperOrientation="1"/></properties><elements resolver="hvl-default">${elementsList.join('\n')}</elements></document>`;
+  
+  // UYAP'ın özel metin (CDATA) okuma formatı eklendi
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<document>
+<content><![CDATA[${fullText}]]></content>
+<properties><pageFormat mediaSizeName="1" leftMargin="70.8" rightMargin="70.8" topMargin="70.8" bottomMargin="70.8" paperOrientation="1"/></properties>
+<elements resolver="hvl-default">
+${elementsList.join('\n')}
+</elements>
+</document>`;
 }
 
 async function createUdfFromXml(xmlContent) {
