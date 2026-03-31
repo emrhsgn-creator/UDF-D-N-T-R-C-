@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-<link rel="manifest" href="manifest.json?v=3">
+<link rel="manifest" href="manifest.json?v=4">
 <meta name="theme-color" content="#0a0c10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -52,12 +52,6 @@
   .convert-section { display: flex; gap: 12px; align-items: center; }
   .btn-convert { flex: 1; padding: 16px 24px; border: none; border-radius: var(--radius); background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
   .btn-clear { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-dim); font-size: 14px; cursor: pointer; }
-  .info-section { margin-top: 48px; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-  .info-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-  .info-section p { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
-  .info-card { padding: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; }
-  .info-card h5 { font-size: 12px; color: var(--accent); margin-bottom: 6px; }
   .progress-wrap { margin-top: 16px; display: none; } .progress-wrap.active { display: block; }
   .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; }
   .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; }
@@ -65,85 +59,54 @@
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.success { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
   .toast.error { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }
-  @media (max-width: 600px) { .app { padding: 24px 16px 60px; } .info-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
 <div class="app">
   <div class="header">
-    <div class="logo-mark">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      UDF DÖNÜŞTÜRÜCÜ (v3)
-    </div>
+    <div class="logo-mark">UDF DÖNÜŞTÜRÜCÜ (v4)</div>
     <h1>Word & PDF → UDF</h1>
-    <p>Belgelerinizi UYAP Doküman Formatına dönüştürün. İşlemler telefonunuzda yapılır, internete yüklenmez.</p>
+    <p>Gelişmiş UYAP Uyumluluk Modu Aktif</p>
   </div>
-
   <div class="drop-zone" id="dropZone">
-    <div class="drop-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    </div>
+    <div class="drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
     <h3>Dosyalarınızı seçin</h3>
-    <div class="format-badges"><span class="format-badge">.DOCX</span><span class="format-badge">.PDF</span></div>
     <input type="file" id="fileInput" multiple accept=".docx,.pdf" />
   </div>
-
   <div class="file-list" id="fileList"></div>
-  <div class="progress-wrap" id="progressWrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><div class="progress-text" id="progressText" style="margin-top:8px; font-size:12px; color:#8892a8; text-align:center;"></div></div>
-
+  <div class="progress-wrap" id="progressWrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
   <div class="convert-section" id="convertSection" style="display:none;">
     <button class="btn-convert" id="btnConvert" onclick="convertAll()">⚡ Dönüştür</button>
     <button class="btn-clear" onclick="clearAll()">Temizle</button>
   </div>
-
-  <div class="info-section">
-    <h4>UDF Formatı Hakkında</h4>
-    <div class="info-grid">
-      <div class="info-card"><h5>GÜVENLİK</h5><p>Dosyalar cihazınızda işlenir, sunucuya gitmez.</p></div>
-      <div class="info-card"><h5>UYUMLULUK</h5><p>Oluşturulan dosyalar UYAP Editör ile %100 uyumludur.</p></div>
-    </div>
-  </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-// PWA Önbellek Kırıcı - Eski versiyonları otomatik siler
+// PWA Önbellek Kırıcı
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    for(let registration of registrations) { registration.unregister(); }
-  });
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW Hatası:', err));
+    for(let r of registrations) { r.unregister(); }
   });
 }
 
-// Uygulama Kodları
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 const files = []; const results = {};
 const fileInput = document.getElementById('fileInput');
 
-fileInput.addEventListener('change', ev => {
-  if (ev.target.files) addFiles(ev.target.files);
-  ev.target.value = '';
-});
+fileInput.addEventListener('change', ev => { if (ev.target.files) addFiles(ev.target.files); ev.target.value = ''; });
 
-function addFiles(fileList) {
-  for (const f of fileList) {
+function addFiles(fl) {
+  for (const f of fl) {
     const ext = f.name.split('.').pop().toLowerCase();
-    if (ext !== 'docx' && ext !== 'pdf') { showToast('Sadece .docx ve .pdf desteklenir', 'error'); continue; }
-    if (files.some(x => x.name === f.name && x.size === f.size)) continue;
-    files.push(f);
+    if (ext !== 'docx' && ext !== 'pdf') continue;
+    if (!files.some(x => x.name === f.name && x.size === f.size)) files.push(f);
   }
   renderList();
 }
 
-function removeFile(idx) {
-  const f = files[idx]; if (f) delete results[f.name];
-  files.splice(idx, 1); renderList();
-}
-
+function removeFile(idx) { files.splice(idx, 1); renderList(); }
 function clearAll() { files.length = 0; Object.keys(results).forEach(k => delete results[k]); renderList(); }
 function formatSize(bytes) { return bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB'; }
 
@@ -162,57 +125,46 @@ function renderList() {
   }).join('');
 }
 
-// UYAP UDF (V3) - KESİN ÇÖZÜM İÇİN YENİDEN YAZILDI
+// UYAP V4 SAF METİN MODU 
 function buildUdfXml(paragraphs) {
-  let fullText = ''; 
-  const elementsList = [];
+  // Tüm metinleri tek bir dizeye birleştir
+  let rawText = paragraphs.map(p => p.text || '').join('\n');
+  
+  // UYAP'ı çökerten görünmez boşlukları ve carriage return karakterlerini SİL
+  let cleanText = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  cleanText = cleanText.replace(/[\u200B-\u200D\uFEFF]/g, ''); // Sıfır genişlikli karakterleri yok et
+  cleanText = cleanText.replace(/]]>/g, ']] >'); // XML kırıcı karakteri maskele
+  
+  // UYAP garanti olsun diye belgenin sonunun enter ile bitmesini ister
+  if (!cleanText.endsWith('\n')) cleanText += '\n';
+
+  let elementsList = [];
   let currentOffset = 0;
 
-  for (let p of paragraphs) {
-    // 1. Kural: UYAP'ı çökerten tüm gizli boşlukları standart "Enter" karakterine çevir
-    let text = (p.text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // Metni satırlara böl
+  let lines = cleanText.match(/[^\n]*\n|[^\n]+/g) || ['\n'];
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    let length = line.length;
     
-    // 2. Kural: UYAP paragraf içinde Enter kabul etmez. Her Enter'ı kendi paragrafına böleceğiz!
-    let lines = text.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      
-      if (i === lines.length - 1 && line === '') continue; // Fazladan boşluk üretme
-      
-      let paraText = line + '\n';
-      let length = paraText.length;
-      
-      const contentAttrs = [
-        `startOffset="${currentOffset}"`, 
-        `length="${length}"`,
-        `fontFamily="Times New Roman"`,
-        `fontSize="${p.fontSize || '12'}"`,
-        `bold="${p.bold ? 'true' : 'false'}"`,
-        `italic="${p.italic ? 'true' : 'false'}"`,
-        `underline="${p.underline ? 'true' : 'false'}"`
-      ];
-      
-      elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0"><content ${contentAttrs.join(' ')}/></paragraph>`);
-      
-      fullText += paraText;
-      currentOffset += length; 
-    }
+    // Güvenli içerik etiketi (stiller iptal edildi, en saf hali)
+    let contentTag = `<content startOffset="${currentOffset}" length="${length}" fontFamily="Times New Roman" fontSize="12" bold="false" italic="false" underline="false"/>`;
+    elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0">\n${contentTag}\n</paragraph>`);
+    
+    currentOffset += length;
   }
 
-  // Eğer belge tamamen boşsa UYAP çökmesin diye tek boşluk ekle
-  if (fullText === '') {
-    fullText = '\n';
-    elementsList.push(`<paragraph Alignment="0" FirstLineIndent="0.0" lineSpacing="1.0"><content startOffset="0" length="1" fontFamily="Times New Roman" fontSize="12" bold="false" italic="false" underline="false"/></paragraph>`);
-  }
-  
-  // 3. Kural: UYAP Editör'ün aradığı boş STYLES (<styles></styles>) etiketi eklendi
+  // XML Şablonu (UYAP Editör'ün kendi yarattığı orijinal yapı)
   return `<?xml version="1.0" encoding="UTF-8"?>
 <document>
-<content><![CDATA[${fullText}]]></content>
+<content><![CDATA[${cleanText}]]></content>
 <properties>
-<pageFormat mediaSizeName="1" leftMargin="70.875" rightMargin="70.875" topMargin="70.875" bottomMargin="70.875" paperOrientation="1" headerFOffset="20.0" footerFOffset="20.0"/>
+<pageFormat mediaSizeName="1" leftMargin="70.86614" rightMargin="70.86614" topMargin="70.86614" bottomMargin="70.86614" paperOrientation="1" headerFOffset="20.0" footerFOffset="20.0"/>
 </properties>
-<styles></styles>
+<styles>
+<style name="Varsay&#305;lan" family="hvl-default" size="12" bold="false" italic="false"/>
+</styles>
 <elements resolver="hvl-default">
 ${elementsList.join('\n')}
 </elements>
@@ -222,7 +174,8 @@ ${elementsList.join('\n')}
 async function createUdfFromXml(xmlContent) {
   const zip = new JSZip(); 
   zip.file('content.xml', xmlContent);
-  return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  // ÇOK ÖNEMLİ: Sıkıştırmayı kapatıyoruz (STORE modu). UYAP'ın okuyamama sorununu kesin çözer.
+  return await zip.generateAsync({ type: 'blob', compression: 'STORE' });
 }
 
 async function processDocx(file) {
@@ -231,10 +184,10 @@ async function processDocx(file) {
   const doc = new DOMParser().parseFromString('<div>' + result.value + '</div>', 'text/html');
   const paragraphs = [];
   for (const el of doc.body.firstChild.children) {
-    let text = el.textContent || ''; if (!text && el.tagName.toLowerCase() !== 'br') text = '\n';
-    paragraphs.push({ text: text + '\n', bold: el.innerHTML.includes('<b>') || el.innerHTML.includes('<strong>'), italic: el.innerHTML.includes('<i>') || el.innerHTML.includes('<em>'), fontSize: '12' });
+    let text = el.textContent || ''; if (!text) text = '\n';
+    paragraphs.push({ text: text + '\n' });
   }
-  return paragraphs.length ? paragraphs : [{text: '\n', fontSize: '12'}];
+  return paragraphs.length ? paragraphs : [{text: '\n'}];
 }
 
 async function processPdf(file) {
@@ -246,10 +199,10 @@ async function processPdf(file) {
     let lastY = null; let currentLine = '';
     for (const item of textContent.items) {
       const y = item.transform[5];
-      if (lastY !== null && Math.abs(y - lastY) > 5) { if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n', fontSize: '12' }); currentLine = ''; }
+      if (lastY !== null && Math.abs(y - lastY) > 5) { if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n' }); currentLine = ''; }
       currentLine += item.str; lastY = y;
     }
-    if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n', fontSize: '12' });
+    if (currentLine.trim()) paragraphs.push({ text: currentLine.trim() + '\n' });
   }
   return paragraphs;
 }
